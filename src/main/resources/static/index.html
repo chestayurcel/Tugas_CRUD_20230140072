@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>CRUD KTP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Manajemen Data KTP</h2>
+
+    <div id="alertBox" class="alert d-none" role="alert"></div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card p-3">
+                <h5 id="formTitle">Tambah Data KTP</h5>
+                <form id="ktpForm">
+                    <input type="hidden" id="ktpId">
+                    <div class="mb-2">
+                        <label>Nomor KTP</label>
+                        <input type="text" id="nomorKtp" class="form-control" required>
+                    </div>
+                    <div class="mb-2">
+                        <label>Nama Lengkap</label>
+                        <input type="text" id="namaLengkap" class="form-control" required>
+                    </div>
+                    <div class="mb-2">
+                        <label>Alamat</label>
+                        <input type="text" id="alamat" class="form-control" required>
+                    </div>
+                    <div class="mb-2">
+                        <label>Tanggal Lahir</label>
+                        <input type="date" id="tanggalLahir" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Jenis Kelamin</label>
+                        <select id="jenisKelamin" class="form-select" required>
+                            <option value="">Pilih...</option>
+                            <option value="Laki-laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="btnSave">Simpan</button>
+                    <button type="button" class="btn btn-secondary w-100 mt-2 d-none" id="btnCancel">Batal Edit</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card p-3 overflow-auto">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>NIK</th>
+                        <th>Nama</th>
+                        <th>Alamat</th>
+                        <th>Tgl Lahir</th>
+                        <th>L/P</th>
+                        <th>Aksi</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ktpTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:8080/ktp';
+
+    function showAlert(message, isError = false) {
+        const box = $('#alertBox');
+        box.removeClass('d-none alert-success alert-danger');
+        box.addClass(isError ? 'alert-danger' : 'alert-success');
+        box.text(message);
+        setTimeout(() => box.addClass('d-none'), 3000);
+    }
+
+    function loadData() {
+        $.ajax({
+            url: API_URL,
+            type: 'GET',
+            success: function(response) {
+                let rows = '';
+                response.data.forEach(ktp => {
+                    rows += `<tr>
+                        <td>${ktp.nomorKtp}</td>
+                        <td>${ktp.namaLengkap}</td>
+                        <td>${ktp.alamat}</td>
+                        <td>${ktp.tanggalLahir}</td>
+                        <td>${ktp.jenisKelamin}</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning" onclick="editData(${ktp.id})">Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteData(${ktp.id})">Hapus</button>
+                        </td>
+                    </tr>`;
+                });
+                $('#ktpTableBody').html(rows);
+            }
+        });
+    }
+
+    $('#ktpForm').submit(function(e) {
+        e.preventDefault();
+        const id = $('#ktpId').val();
+        const ktpData = {
+            nomorKtp: $('#nomorKtp').val(),
+            namaLengkap: $('#namaLengkap').val(),
+            alamat: $('#alamat').val(),
+            tanggalLahir: $('#tanggalLahir').val(),
+            jenisKelamin: $('#jenisKelamin').val()
+        };
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `${API_URL}/${id}` : API_URL;
+
+        $.ajax({
+            url: url,
+            type: method,
+            contentType: 'application/json',
+            data: JSON.stringify(ktpData),
+            success: function(res) {
+                showAlert(res.message);
+                resetForm();
+                loadData();
+            },
+            error: function(err) {
+                showAlert(err.responseJSON.message, true);
+            }
+        });
+    });
+
+    function editData(id) {
+        $.ajax({
+            url: `${API_URL}/${id}`,
+            type: 'GET',
+            success: function(res) {
+                const ktp = res.data;
+                $('#ktpId').val(ktp.id);
+                $('#nomorKtp').val(ktp.nomorKtp);
+                $('#namaLengkap').val(ktp.namaLengkap);
+                $('#alamat').val(ktp.alamat);
+                $('#tanggalLahir').val(ktp.tanggalLahir);
+                $('#jenisKelamin').val(ktp.jenisKelamin);
+
+                $('#formTitle').text('Edit Data KTP');
+                $('#btnSave').removeClass('btn-primary').addClass('btn-success').text('Update');
+                $('#btnCancel').removeClass('d-none');
+            }
+        });
+    }
+
+    function deleteData(id) {
+        if(confirm('Yakin ingin menghapus data ini?')) {
+            $.ajax({
+                url: `${API_URL}/${id}`,
+                type: 'DELETE',
+                success: function(res) {
+                    showAlert(res.message);
+                    loadData();
+                },
+                error: function(err) {
+                    showAlert('Gagal menghapus data', true);
+                }
+            });
+        }
+    }
+
+    function resetForm() {
+        $('#ktpForm')[0].reset();
+        $('#ktpId').val('');
+        $('#formTitle').text('Tambah Data KTP');
+        $('#btnSave').removeClass('btn-success').addClass('btn-primary').text('Simpan');
+        $('#btnCancel').addClass('d-none');
+    }
+
+    $('#btnCancel').click(resetForm);
+
+    $(document).ready(function() {
+        loadData();
+    });
+</script>
+</body>
+</html>

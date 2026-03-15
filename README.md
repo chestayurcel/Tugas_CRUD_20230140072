@@ -11,3 +11,17 @@ Update
 
 Delete
 ![Tampilan Delete](./images/tampilandelete.png)
+
+## Screenshot Postman:
+
+POST
+![Method_Post](./images/methodpost.png)
+
+GET
+![Method_Get](./images/methodget.png)
+
+PUT
+![Method_Put](./images/methodput.png)
+
+DELETE
+![Method_Delete](./images/methoddelete.png)
